@@ -7,125 +7,75 @@
  * Date: 2020/5/21
  * Time: 17:28
  */
-class  RpcServer
+class RpcServer
 {
-    private $params = [
-        'host' => '',  // ip地址，列出来的目的是为了友好看出来此变量中存储的信息
-        'port' => '', // 端口
-        'path' => '' // 服务目录
-    ];
+    protected $server = null;
 
-    private $config = [
-        'real_path' => '',
-        'max_size' => 2048 // 最大接收数据大小
-    ];
-
-    private $server = null;
-
-    public function __construct($params)
+    public function __construct($host, $port, $path)
     {
-        $this->check();
-        $this->init($params);
-    }
+        // 创建一个 Socket 服务
+        if (($this->server = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) < 0) {
+            exit("socket_create() 失败的原因是:" . socket_strerror($this->server) . "\n");
+        }
+        if (($ret = socket_bind($this->server, $host, $port)) < 0) {
+            exit("socket_bind() 失败的原因是:" . socket_strerror($ret) . "\n");
+        }
+        if (($ret = socket_listen($this->server, 3)) < 0) {
+            exit("socket_listen() 失败的原因是:" . socket_strerror($ret) . "\n");
+        }
 
-    private function check()
-    {
-        $this->serverPath();
-    }
-
-    public function serverPath()
-    {
-        $path = $this->params['path'];
+        // 判断RPC 服务目录是否存在
         $realPath = realpath(__DIR__ . $path);
         if ($realPath === false || !file_exists($realPath)) {
-            exit("{$path} error!");
+            exit("{$path} error \n");
         }
-        $this->config['real_path'] = $realPath;
-    }
 
-    private function init($params)
-    {
-        // 将传递过来的参数初始化
-        $this->params = $params;
-        // 创建tcpsocket服务
-        $this->createServer();
-    }
-
-    private function createServer()
-    {
-        $this->server = stream_socket_server("tcp://{$this->params['host']}:{$this->params['port']}", $errno, $errstr);
-        if (!$this->server) exit([
-            $errno, $errstr
-        ]);
-    }
-
-    public static function instance($params)
-    {
-        return new RpcServer($params);
-    }
-
-    public function run()
-    {
-        while (true) {
-            $client = stream_socket_accept($this->server);
+        do {
+            $client = socket_accept($this->server);
             if ($client) {
-                echo "有新连接\n";
-                $buf = fread($client, $this->config['max_size']);
-                print_r('接收到的原始数据:' . $buf . "\n");
-                // 自定义协议目的是拿到类方法和参数(可改成自己定义的)
-                $this->parseProtocol($buf, $class, $method, $params);
-                // 执行方法
-                $this->execMethod($client, $class, $method, $params);
-                //关闭客户端
-                fclose($client);
-                echo "关闭了连接\n";
-            }
-        }
-    }
-
-    private function execMethod($client, $class, $method, $params)
-    {
-        if ($class && $method) {
-            // 首字母转为大写
-            $class = ucfirst($class);
-            $file = $this->params['path'] . '/' . $class . '.php';
-            //判断文件是否存在，如果有，则引入文件
-            if (file_exists($file)) {
-                require_once $file;
-                //实例化类，并调用客户端指定的方法
-                $obj = new $class();
-                //如果有参数，则传入指定参数
-                if (!$params) {
-                    $data = $obj->$method();
+                //一次性读取
+                $buf = socket_read($client, 8024);
+                echo $buf;
+                //解析客户端发送过来的协议
+                $classRet = preg_match('/Rpc-Class:\s(.*);\r\n/i', $buf, $class);
+                $methodRet = preg_match('/Rpc-Method:\s(.*);\r\n/i', $buf, $method);
+                $paramsRet = preg_match('/Rpc-Params:\s(.*);\r\n/i', $buf, $params);
+                if ($classRet && $methodRet) {
+                    $class = ucfirst($class[1]);
+                    $method = $method[1];
+                    $params = json_decode($params[1], true);
+                    $file = $realPath . '/' . $class . '.php';  // 类文件需要和类名一致
+                    $data = ''; // 执行结果
+                    //判断类文件是否存在
+                    if (file_exists($file)) {
+                        // 引入类文件
+                        require_once $file;
+                        //实例化类,
+                        $rfc_obj = new ReflectionClass($class);
+                        // 判断该类指定方法是否存在
+                        if ($rfc_obj->hasMethod($method)) {
+                            // 执行类方法
+                            $rfc_method = $rfc_obj->getMethod($method);
+                            $data = $rfc_method->invokeArgs($rfc_obj->newInstance(), [$params]);
+                        } else {
+                            socket_write($client, 'method error');
+                        }
+                        //把运行后的结果返回给客户端
+                        socket_write($client, $data);
+                    }
                 } else {
-                    $data = $obj->$method($params);
+                    socket_write($client, 'class or method error');
                 }
-                // 打包数据
-                $this->packProtocol($data);
-                //把运行后的结果返回给客户端
-                fwrite($client, $data);
+                // 关闭客户端
+                socket_close($client);
             }
-        } else {
-            fwrite($client, 'class or method error');
-        }
+        } while (true);
     }
 
-    private function parseProtocol($buf, &$class, &$method, &$params)
+    public function __destruct()
     {
-        $buf = json_decode($buf, true);
-        $class = $buf['class'];
-        $method = $buf['method'];
-        $params = $buf['params'];
-    }
-
-    private function packProtocol(&$data)
-    {
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
+        socket_close($this->server);
     }
 }
 
-RpcServer::instance([
-    'host' => '127.0.0.1',
-    'port' => 8888,
-    'path' => './api'
-])->run();
+new RpcServer('127.0.0.1', 8080,'/../Provision/');

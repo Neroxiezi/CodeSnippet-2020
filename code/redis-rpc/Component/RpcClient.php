@@ -9,11 +9,11 @@
  */
 class RpcClient
 {
-    private $urlInfo = array();
-
+    protected $client = null;
+    protected $url_info = [];   // 远程调用 URL 组成部分
     public function __construct($url)
     {
-        $this->urlInfo = parse_url($url);
+        $this->url_info = parse_url($url);
     }
 
     public static function instance($url)
@@ -21,24 +21,42 @@ class RpcClient
         return new RpcClient($url);
     }
 
+    public function check_server()
+    {
+        $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        @$ok = socket_connect($socket, $this->url_info['host'], $this->url_info['port']);
+        if ($ok) {
+            return true;
+        } else {
+            throw new ErrorException('服务没有开启');
+        }
+    }
+
+
     public function __call($name, $arguments)
     {
-        //创建一个客户端
-        $client = stream_socket_client("tcp://{$this->urlInfo['host']}:{$this->urlInfo['port']}", $errno, $errstr);
-        if (!$client) {
-            exit("{$errno} : {$errstr} \n");
+        // 创建一个客户端
+        $this->client = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        if (!$this->client) {
+            exit('socket_create() 失败');
         }
-        $data = [
-            'class' => basename($this->urlInfo['path']),
-            'method' => $name,
-            'params' => $arguments
-        ];
-        //向服务端发送我们自定义的协议数据
-        fwrite($client, json_encode($data));
-        //读取服务端传来的数据
-        $data = fread($client, 2048);
-        //关闭客户端
-        fclose($client);
-        return $data;
+        socket_connect($this->client, $this->url_info['host'], $this->url_info['port']);
+        // 传递调用的类名
+        $class = basename($this->url_info['path']);
+        // 传递调用的参数
+        $args = '';
+        if (isset($arguments[0])) {
+            $args = json_encode($arguments[0]);
+        }
+        // 向服务端发送我们自定义的协议数据
+        $proto = "Rpc-Class: {$class};" . PHP_EOL
+            . "Rpc-Method: {$name};" . PHP_EOL
+            . "Rpc-Params: {$args};" . PHP_EOL;
+        socket_write($this->client, $proto);
+        // 读取服务端传来的数据
+        $buf = socket_read($this->client, 8024);
+        socket_close($this->client);
+
+        return $buf;
     }
 }

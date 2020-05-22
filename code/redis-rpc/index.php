@@ -19,7 +19,6 @@
             <p class="card-text">Text</p>
         </div>
         <div class="card-footer text-muted">
-            <div id="comment_card"></div>
         </div>
     </div>
 </div>
@@ -35,10 +34,10 @@
             //请求地址
             url: "./server.php",
             //数据，json字符串
-            data: {'method': 'check_status'},
+            data: {'method': 'check_status', 'article': 1},
             //请求成功
             success: function (result) {
-                console.log(result);
+                $(".card-footer").empty().append(result)
             },
             //请求失败，包含具体的错误信息
             error: function (e) {
