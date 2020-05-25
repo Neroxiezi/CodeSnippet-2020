@@ -1,0 +1,26 @@
+2020-05-25 17:35:55 pid:1 Error: Class 'Worker' not found in D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\start_io.php:56
+Stack trace:
+#0 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(2393): {closure}(Object(Workerman\Worker))
+#1 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(1404): Workerman\Worker->run()
+#2 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(1347): Workerman\Worker::forkWorkersForWindows()
+#3 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(546): Workerman\Worker::forkWorkers()
+#4 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\start_io.php(102): Workerman\Worker::runAll()
+#5 {main}
+2020-05-25 17:35:56 pid:1 Worker process terminated
+2020-05-25 17:35:57 pid:1 Error: Class 'Worker' not found in D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\start_io.php:56
+Stack trace:
+#0 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(2393): {closure}(Object(Workerman\Worker))
+#1 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(1404): Workerman\Worker->run()
+#2 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(1347): Workerman\Worker::forkWorkersForWindows()
+#3 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(546): Workerman\Worker::forkWorkers()
+#4 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\start_io.php(102): Workerman\Worker::runAll()
+#5 {main}
+2020-05-25 17:36:10 pid:1 Error: Class 'Worker' not found in D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\start_io.php:56
+Stack trace:
+#0 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(2393): {closure}(Object(Workerman\Worker))
+#1 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(1404): Workerman\Worker->run()
+#2 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(1347): Workerman\Worker::forkWorkersForWindows()
+#3 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\vendor\workerman\workerman\Worker.php(546): Workerman\Worker::forkWorkers()
+#4 D:\phpstudy_pro\WWW\CodeSnippet-2020\code\workman\workman-demo\start_io.php(102): Workerman\Worker::runAll()
+#5 {main}
+2020-05-25 17:36:11 pid:1 Worker process terminated
